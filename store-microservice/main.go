@@ -112,19 +112,6 @@ func main() {
 	if err != nil {
 		logger.Error("Failed to consume from queue", zap.Error(err))
 
-		// _, err := rabbitService.ch.QueueDeclare(
-		// 	"file-data-queue", // Name of the queue
-		// 	false,             // Durable
-		// 	false,             // Delete when unused
-		// 	false,             // Exclusive
-		// 	false,             // No-wait
-		// 	nil,               // Arguments
-		// )
-		// if err != nil {
-		// 	logger.Error("Failed to create consume queue", zap.Error(err))
-		// }
-	}
-
 	logger.Info("Listening to 'file-data-queue'...")
 
 	for {

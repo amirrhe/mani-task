@@ -1,5 +1,3 @@
-// Inside your fileHandler.go
-
 package handlers
 
 import (

@@ -36,9 +36,7 @@ func (rmq *RabbitMQService) PublishFileData(fileData *models.FileData, queueName
 	return nil
 }
 
-// publishToQueue publishes message to RabbitMQ queue
 func (rmq *RabbitMQService) publishToQueue(message []byte, queueName string) error {
-	// Declare the queue
 	q, err := rmq.ch.QueueDeclare(
 		queueName, // Name of the queue
 		false,     // Durable
@@ -51,7 +49,6 @@ func (rmq *RabbitMQService) publishToQueue(message []byte, queueName string) err
 		return err
 	}
 
-	// Publish the message to the queue
 	err = rmq.ch.Publish(
 		"",     // Exchange
 		q.Name, // Routing key (queue name)

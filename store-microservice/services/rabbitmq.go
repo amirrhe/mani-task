@@ -35,7 +35,6 @@ func (rmq *RabbitMQService) ConsumeQueue(queueName string) (<-chan amqp.Delivery
 	return msgs, nil
 }
 
-// publishToQueue publishes message to RabbitMQ queue
 func (rmq *RabbitMQService) PublishToQueue(message []byte, queueName string) error {
 	// Declare the queue
 	q, err := rmq.ch.QueueDeclare(
@@ -50,7 +49,6 @@ func (rmq *RabbitMQService) PublishToQueue(message []byte, queueName string) err
 		return err
 	}
 
-	// Publish the message to the queue
 	err = rmq.ch.Publish(
 		"",     // Exchange
 		q.Name, // Routing key (queue name)

@@ -15,7 +15,6 @@ func init() {
 	cfg.EncoderConfig.EncodeCaller = zapcore.ShortCallerEncoder
 	cfg.EncoderConfig.EncodeLevel = zapcore.CapitalLevelEncoder
 
-	// Redirect logs to stdout
 	cfg.OutputPaths = []string{"stdout"}
 
 	l, err := cfg.Build()
