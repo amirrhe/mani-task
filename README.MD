@@ -9,13 +9,13 @@ This microservice provides functionality for user authentication, file uploading
 
     For the **Store Microservice**:
     ```bash
-    cd store_microservice
+    cd store-microservice
     cp .env.sample .env
     ```
 
     For the **Retrieval Microservice**:
     ```bash
-    cd retrieval_microservice
+    cd retreival-microservice
     cp .env.sample .env
     ```
 
