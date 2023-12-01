@@ -3,14 +3,13 @@ package main
 import (
 	"log"
 	"os"
-	"strconv"
-
 	"retreival/handlers"
 	"retreival/middleware"
 	"retreival/models"
 	"retreival/repositories"
 	"retreival/services"
 	"retreival/utils"
+	"strconv"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/streadway/amqp"

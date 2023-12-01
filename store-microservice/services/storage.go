@@ -2,8 +2,6 @@ package services
 
 import (
 	"encoding/json"
-	"fmt"
-
 	"store/models"
 	"store/utils"
 
@@ -52,7 +50,6 @@ func (ss *StorageService) FindFileNames(request models.FileRequest) ([]string, e
 	for i, file := range files {
 		fileNames[i] = file.FileName
 	}
-	fmt.Println("file names is ", fileNames)
 
 	return fileNames, nil
 }

@@ -4,10 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"strings"
-
 	"retreival/models"
 	"retreival/utils"
+	"strings"
 
 	"github.com/gofiber/fiber/v2"
 	"go.uber.org/zap"
@@ -30,14 +29,12 @@ func (fs *FileService) ExtractFileDataAndMetadata(c *fiber.Ctx) (*models.FileDat
 
 	file, err := c.FormFile("file")
 	if err != nil {
-		fmt.Println("here1")
 		fs.log.Error("Failed to retrieve file", zap.Error(err))
 		return nil, utils.ErrNoFileUploaded
 	}
 
 	src, err := file.Open()
 	if err != nil {
-		fmt.Println("here2")
 		fs.log.Error("Failed to open uploaded file", zap.Error(err))
 		return nil, fmt.Errorf("failed to open uploaded file: %s", err.Error())
 	}
@@ -45,7 +42,6 @@ func (fs *FileService) ExtractFileDataAndMetadata(c *fiber.Ctx) (*models.FileDat
 
 	fileBytes, err := io.ReadAll(src)
 	if err != nil {
-		fmt.Println("here3")
 		return nil, fmt.Errorf("failed to read file content: %s", err.Error())
 	}
 

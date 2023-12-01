@@ -3,12 +3,10 @@
 package handlers
 
 import (
-	"fmt"
-	"strings"
-
 	"retreival/models"
 	"retreival/services"
 	"retreival/utils"
+	"strings"
 
 	"github.com/gofiber/fiber/v2"
 	"go.uber.org/zap"
@@ -27,7 +25,6 @@ func NewFileHandler(fileService *services.FileService) *FileHandler {
 func (fh *FileHandler) UploadFile(c *fiber.Ctx) error {
 	fileData, err := fh.fileService.ExtractFileDataAndMetadata(c)
 	if err != nil {
-		fmt.Println(err)
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid file data or metadata"})
 	}
 
@@ -66,7 +63,6 @@ func (fh *FileHandler) GetFile(c *fiber.Ctx) error {
 }
 
 func (fh *FileHandler) RetrieveFileNames(c *fiber.Ctx) error {
-	fmt.Println("request comming")
 	fileNames, err := fh.fileService.RetrieveFileNamesFromQueue("file-names-responses")
 	if err != nil {
 		fh.log.Error("Failed to retrieve file names", zap.Error(err))
