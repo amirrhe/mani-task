@@ -112,48 +112,49 @@ func main() {
 	if err != nil {
 		logger.Error("Failed to consume from queue", zap.Error(err))
 
-	logger.Info("Listening to 'file-data-queue'...")
+		logger.Info("Listening to 'file-data-queue'...")
 
-	for {
-		msg, ok := <-msgs
-		if !ok {
-			logger.Info("Channel closed, exiting")
-			break
-		}
+		for {
+			msg, ok := <-msgs
+			if !ok {
+				logger.Info("Channel closed, exiting")
+				break
+			}
 
-		var fileData models.FileData
-		err := json.Unmarshal(msg.Body, &fileData)
-		if err != nil {
-			logger.Error("Failed to unmarshal file data from message", zap.Error(err))
-			continue
-		}
-
-		logger.Info("Received file data", zap.String("fileName", fileData.FileName))
-
-		err = metaDataService.SaveFileData(&fileData)
-		if err != nil {
-			logger.Error("Failed to save metadata in the database", zap.Error(err))
-			continue
-		}
-		logger.Info("Metadata saved successfully", zap.String("fileName", fileData.FileName))
-
-		intFileLimit, _ := strconv.Atoi(config.FileLimit)
-		isWithinLimit, err := volumeLimitService.IsWithinLimit(config.FilePath, fileData.FileSize, intFileLimit)
-		if err != nil {
-			logger.Error("Error checking volume limit", zap.Error(err))
-			continue
-		}
-
-		if isWithinLimit {
-			filePath := filepath.Join(config.FilePath, fileData.FileName)
-			err = fileService.EncryptAndSaveFile(fileData.FileBytes, filePath, []byte(config.SecretKey))
+			var fileData models.FileData
+			err := json.Unmarshal(msg.Body, &fileData)
 			if err != nil {
-				logger.Error("Failed to save encrypted file", zap.Error(err))
+				logger.Error("Failed to unmarshal file data from message", zap.Error(err))
 				continue
 			}
-			logger.Info("File saved successfully", zap.String("filePath", filePath))
-		} else {
-			logger.Warn("Volume limit exceeded, file not saved", zap.String("fileName", fileData.FileName))
+
+			logger.Info("Received file data", zap.String("fileName", fileData.FileName))
+
+			err = metaDataService.SaveFileData(&fileData)
+			if err != nil {
+				logger.Error("Failed to save metadata in the database", zap.Error(err))
+				continue
+			}
+			logger.Info("Metadata saved successfully", zap.String("fileName", fileData.FileName))
+
+			intFileLimit, _ := strconv.Atoi(config.FileLimit)
+			isWithinLimit, err := volumeLimitService.IsWithinLimit(config.FilePath, fileData.FileSize, intFileLimit)
+			if err != nil {
+				logger.Error("Error checking volume limit", zap.Error(err))
+				continue
+			}
+
+			if isWithinLimit {
+				filePath := filepath.Join(config.FilePath, fileData.FileName)
+				err = fileService.EncryptAndSaveFile(fileData.FileBytes, filePath, []byte(config.SecretKey))
+				if err != nil {
+					logger.Error("Failed to save encrypted file", zap.Error(err))
+					continue
+				}
+				logger.Info("File saved successfully", zap.String("filePath", filePath))
+			} else {
+				logger.Warn("Volume limit exceeded, file not saved", zap.String("fileName", fileData.FileName))
+			}
 		}
 	}
 }
