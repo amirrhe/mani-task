@@ -1,22 +1,22 @@
 version: '3'
 
 services:
-  store-microservice:
-    build:
-      context: ./store-microservice
-      dockerfile: Dockerfile
-    restart: always
-    env_file:
-      - ./store-microservice/.env
-    # ports:
-    #   - '8081:8081'
-    networks:
-      - mynetwork
-    depends_on:
-      postgresql:
-        condition: "service_healthy"
-      rabbitmq:
-        condition: "service_healthy"
+#   store-microservice:
+#     build:
+#       context: ./store-microservice
+#       dockerfile: Dockerfile
+#     restart: always
+#     env_file:
+#       - ./store-microservice/.env
+#     # ports:
+#     #   - '8081:8081'
+#     networks:
+#       - mynetwork
+#     depends_on:
+#       postgresql:
+#         condition: "service_healthy"
+#       rabbitmq:
+#         condition: "service_healthy"
 
   retrieval-microservice:
     build:
@@ -30,7 +30,11 @@ services:
     networks:
       - mynetwork
     depends_on:
-      - store-microservice
+      postgresql:
+        condition: "service_healthy"
+      rabbitmq:
+        condition: "service_healthy"
+
 
   postgresql:
     image: postgres:latest

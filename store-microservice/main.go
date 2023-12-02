@@ -5,11 +5,10 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"strconv"
-
 	"store/models"
 	"store/services"
 	"store/utils"
+	"strconv"
 
 	"github.com/joho/godotenv"
 	"github.com/streadway/amqp"
@@ -65,6 +64,7 @@ func createQueueIfNotExist(queueName string, conn *amqp.Connection) error {
 
 func main() {
 	config := LoadConfig()
+	logger := utils.GetLogger()
 
 	db, err := gorm.Open(postgres.Open(config.DatabaseURL), &gorm.Config{})
 	if err != nil {
@@ -76,17 +76,8 @@ func main() {
 	}
 	conn, err := amqp.Dial(config.RabbitmqUrl)
 	if err != nil {
-		log.Fatal("Failed to connect to rabbitmq err is ", err)
+		logger.Error("Failed to connect to rabbitmq err is ", zap.Error(err))
 	}
-
-	ch, err := conn.Channel()
-	if err != nil {
-		log.Fatal("Failed to open a channel")
-	}
-	rabbitService := services.NewRabbitMQService(conn, ch)
-	// defer conn.Close()
-	// defer ch.Close()
-	logger := utils.GetLogger()
 	err = createQueueIfNotExist("file-request-queue", conn)
 	if err != nil {
 		logger.Fatal("Failed to create or check file-request-queue ", zap.Error(err))
@@ -95,6 +86,14 @@ func main() {
 	if err != nil {
 		logger.Fatal("Failed to create or check file-data-queue", zap.Error(err))
 	}
+
+	ch, err := conn.Channel()
+	if err != nil {
+		logger.Warn("Failed to open a channel")
+	}
+	rabbitService := services.NewRabbitMQService(conn, ch)
+	// defer conn.Close()
+	// defer ch.Close()
 
 	fileService := services.NewFileSystemService(logger)
 	metaDataService := services.NewMetadataService(db)

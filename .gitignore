@@ -16,3 +16,4 @@
 go.work
 
 shared-data
+store-microservice/app/*
