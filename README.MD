@@ -20,12 +20,26 @@ This microservice provides functionality for user authentication, file uploading
     ```
 
 2. **Running the Service**
-    - After configuring the environment, start the service by running the following command in the root directory where `docker-compose.yml` is located:
+    
+  **Start Docker Services:**
+
     ```bash
     docker-compose up
     ```
-    
-    This command will initiate the service using Docker Compose, ensuring all necessary components are up and running.
+
+  **Run Store Microservice:**
+
+    After the services are up and running, open a new terminal window or tab, navigate to the `store-microservice` directory, and execute the following command:
+
+    ```bash
+    cd store-microservice
+    go run main.go
+    ```
+
+    Running the above command will start the Store Microservice locally.
+
+  **Note:** Ensure that any necessary dependencies or environment variables are set before running the `main.go` file.
+  
 
 ## Endpoints
 
