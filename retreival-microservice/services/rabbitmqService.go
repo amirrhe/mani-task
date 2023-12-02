@@ -39,7 +39,7 @@ func (rmq *RabbitMQService) PublishFileData(fileData *models.FileData, queueName
 func (rmq *RabbitMQService) publishToQueue(message []byte, queueName string) error {
 	q, err := rmq.ch.QueueDeclare(
 		queueName, // Name of the queue
-		false,     // Durable
+		true,      // Durable
 		false,     // Delete when unused
 		false,     // Exclusive
 		false,     // No-wait

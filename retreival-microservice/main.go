@@ -3,13 +3,14 @@ package main
 import (
 	"log"
 	"os"
+	"strconv"
+
 	"retreival/handlers"
 	"retreival/middleware"
 	"retreival/models"
 	"retreival/repositories"
 	"retreival/services"
 	"retreival/utils"
-	"strconv"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/streadway/amqp"
@@ -69,8 +70,8 @@ func main() {
 		log.Fatal("Failed to open a channel")
 	}
 	rabbitService := services.NewRabbitMQService(conn, ch)
-	defer conn.Close()
-	defer ch.Close()
+	// defer conn.Close()
+	// defer ch.Close()
 	fileLimitInt, _ := strconv.Atoi(config.FileLimit)
 	fileService := services.NewFileService(*rabbitService, fileLimitInt)
 	fileHandler := handlers.NewFileHandler(fileService)

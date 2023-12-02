@@ -19,7 +19,8 @@ func NewRabbitMQService(conn *amqp.Connection, ch *amqp.Channel) *RabbitMQServic
 }
 
 func (rmq *RabbitMQService) ConsumeQueue(queueName string) (<-chan amqp.Delivery, error) {
-	msgs, err := rmq.ch.Consume(
+	chanelRabbit, _ := rmq.conn.Channel()
+	msgs, err := chanelRabbit.Consume(
 		queueName, // queue
 		"",        // consumer
 		true,      // auto-ack
@@ -29,8 +30,29 @@ func (rmq *RabbitMQService) ConsumeQueue(queueName string) (<-chan amqp.Delivery
 		nil,       // args
 	)
 	if err != nil {
-		rmq.log.Error("Failed to register a consumer", zap.Error(err))
-		return nil, err
+		rmq.log.Warn("Failed to register a consumer", zap.Error(err))
+		_, err := chanelRabbit.QueueDeclare(
+			queueName, // Queue name
+			true,      // Durable
+			false,     // Delete when unused
+			false,     // Exclusive
+			false,     // No-wait
+			nil,       // Arguments
+		)
+		if err != nil {
+			return nil, err
+		}
+		msgs, _ := chanelRabbit.Consume(
+			queueName, // queue
+			"",        // consumer
+			true,      // auto-ack
+			false,     // exclusive
+			false,     // no-local
+			false,     // no-wait
+			nil,       // args
+		)
+		return msgs, nil
+
 	}
 	return msgs, nil
 }
@@ -39,7 +61,7 @@ func (rmq *RabbitMQService) PublishToQueue(message []byte, queueName string) err
 	// Declare the queue
 	q, err := rmq.ch.QueueDeclare(
 		queueName, // Name of the queue
-		false,     // Durable
+		true,      // Durable
 		false,     // Delete when unused
 		false,     // Exclusive
 		false,     // No-wait

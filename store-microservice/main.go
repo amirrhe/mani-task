@@ -43,6 +43,26 @@ func LoadConfig() Config {
 	}
 }
 
+func createQueueIfNotExist(queueName string, conn *amqp.Connection) error {
+	ch, _ := conn.Channel()
+	ch.QueueDeclare(queueName, true, false, false, false, nil)
+	_, err := ch.QueueInspect(queueName)
+	if err != nil {
+		_, err := ch.QueueDeclare(
+			queueName, // Queue name
+			true,      // Durable
+			false,     // Delete when unused
+			false,     // Exclusive
+			false,     // No-wait
+			nil,       // Arguments
+		)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func main() {
 	config := LoadConfig()
 
@@ -54,19 +74,28 @@ func main() {
 	if err != nil {
 		log.Fatal("Failed to migrate database:", err)
 	}
-
 	conn, err := amqp.Dial(config.RabbitmqUrl)
 	if err != nil {
-		log.Fatal("Failed to connect to RabbitMQ err is ", err)
+		log.Fatal("Failed to connect to rabbitmq err is ", err)
 	}
+
 	ch, err := conn.Channel()
 	if err != nil {
 		log.Fatal("Failed to open a channel")
 	}
-	defer conn.Close()
-
-	logger := utils.GetLogger()
 	rabbitService := services.NewRabbitMQService(conn, ch)
+	// defer conn.Close()
+	// defer ch.Close()
+	logger := utils.GetLogger()
+	err = createQueueIfNotExist("file-request-queue", conn)
+	if err != nil {
+		logger.Fatal("Failed to create or check file-request-queue ", zap.Error(err))
+	}
+	err = createQueueIfNotExist("file-data-queue", conn)
+	if err != nil {
+		logger.Fatal("Failed to create or check file-data-queue", zap.Error(err))
+	}
+
 	fileService := services.NewFileSystemService(logger)
 	metaDataService := services.NewMetadataService(db)
 	volumeLimitService := services.NewVolumeLimitService(logger)
@@ -75,7 +104,7 @@ func main() {
 
 	fileRequestMsgs, err := rabbitService.ConsumeQueue("file-request-queue")
 	if err != nil {
-		logger.Error("Failed to consume from file-request-queue", zap.Error(err))
+		logger.Warn("Failed to consume from file-request-queue", zap.Error(err))
 	}
 
 	logger.Info("Listening to 'file-request-queue'...")
@@ -110,51 +139,51 @@ func main() {
 
 	msgs, err := rabbitService.ConsumeQueue("file-data-queue")
 	if err != nil {
-		logger.Error("Failed to consume from queue", zap.Error(err))
+		logger.Warn("Failed to consume from queue", zap.Error(err))
+	}
 
-		logger.Info("Listening to 'file-data-queue'...")
+	logger.Info("Listening to 'file-data-queue'...")
 
-		for {
-			msg, ok := <-msgs
-			if !ok {
-				logger.Info("Channel closed, exiting")
-				break
-			}
+	for {
+		msg, ok := <-msgs
+		if !ok {
+			logger.Info("Channel closed, exiting")
+			break
+		}
 
-			var fileData models.FileData
-			err := json.Unmarshal(msg.Body, &fileData)
+		var fileData models.FileData
+		err := json.Unmarshal(msg.Body, &fileData)
+		if err != nil {
+			logger.Error("Failed to unmarshal file data from message", zap.Error(err))
+			continue
+		}
+
+		logger.Info("Received file data", zap.String("fileName", fileData.FileName))
+
+		err = metaDataService.SaveFileData(&fileData)
+		if err != nil {
+			logger.Error("Failed to save metadata in the database", zap.Error(err))
+			continue
+		}
+		logger.Info("Metadata saved successfully", zap.String("fileName", fileData.FileName))
+
+		intFileLimit, _ := strconv.Atoi(config.FileLimit)
+		isWithinLimit, err := volumeLimitService.IsWithinLimit(config.FilePath, fileData.FileSize, intFileLimit)
+		if err != nil {
+			logger.Error("Error checking volume limit", zap.Error(err))
+			continue
+		}
+
+		if isWithinLimit {
+			filePath := filepath.Join(config.FilePath, fileData.FileName)
+			err = fileService.EncryptAndSaveFile(fileData.FileBytes, filePath, []byte(config.SecretKey))
 			if err != nil {
-				logger.Error("Failed to unmarshal file data from message", zap.Error(err))
+				logger.Error("Failed to save encrypted file", zap.Error(err))
 				continue
 			}
-
-			logger.Info("Received file data", zap.String("fileName", fileData.FileName))
-
-			err = metaDataService.SaveFileData(&fileData)
-			if err != nil {
-				logger.Error("Failed to save metadata in the database", zap.Error(err))
-				continue
-			}
-			logger.Info("Metadata saved successfully", zap.String("fileName", fileData.FileName))
-
-			intFileLimit, _ := strconv.Atoi(config.FileLimit)
-			isWithinLimit, err := volumeLimitService.IsWithinLimit(config.FilePath, fileData.FileSize, intFileLimit)
-			if err != nil {
-				logger.Error("Error checking volume limit", zap.Error(err))
-				continue
-			}
-
-			if isWithinLimit {
-				filePath := filepath.Join(config.FilePath, fileData.FileName)
-				err = fileService.EncryptAndSaveFile(fileData.FileBytes, filePath, []byte(config.SecretKey))
-				if err != nil {
-					logger.Error("Failed to save encrypted file", zap.Error(err))
-					continue
-				}
-				logger.Info("File saved successfully", zap.String("filePath", filePath))
-			} else {
-				logger.Warn("Volume limit exceeded, file not saved", zap.String("fileName", fileData.FileName))
-			}
+			logger.Info("File saved successfully", zap.String("filePath", filePath))
+		} else {
+			logger.Warn("Volume limit exceeded, file not saved", zap.String("fileName", fileData.FileName))
 		}
 	}
 }

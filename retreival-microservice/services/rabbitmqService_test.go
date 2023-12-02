@@ -3,15 +3,14 @@ package services_test
 import (
 	"fmt"
 	"os"
+	"retreival/models"
+	"retreival/services"
 	"testing"
 	"time"
 
 	"github.com/joho/godotenv"
 	"github.com/streadway/amqp"
 	"github.com/stretchr/testify/assert"
-
-	"retreival/models"
-	"retreival/services"
 )
 
 const (
@@ -70,7 +69,7 @@ func TestRabbitMQService_ConsumeQueue(t *testing.T) {
 
 	_, err = ch.QueueDeclare(
 		testQueueName, // Name of the test queue
-		false,         // Durable
+		true,          // Durable
 		false,         // Delete when unused
 		false,         // Exclusive
 		false,         // No-wait

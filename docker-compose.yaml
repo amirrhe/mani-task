@@ -8,8 +8,8 @@ services:
     restart: always
     env_file:
       - ./store-microservice/.env
-    ports:
-      - '8081:8081'
+    # ports:
+    #   - '8081:8081'
     networks:
       - mynetwork
     depends_on:
@@ -30,10 +30,7 @@ services:
     networks:
       - mynetwork
     depends_on:
-      postgresql:
-        condition: "service_healthy"
-      rabbitmq:
-        condition: "service_healthy"
+      - store-microservice
 
   postgresql:
     image: postgres:latest
